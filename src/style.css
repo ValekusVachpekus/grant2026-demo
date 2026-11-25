@@ -503,3 +503,76 @@ button.chat-launcher:hover { background: #902b18; }
 .chat-prompts, .estimate-chat form { display: flex; flex-wrap: wrap; gap: .4rem; }
 .estimate-chat form input { flex: 1; min-width: 8rem; }
 @media print { .chat-launcher, .estimate-chat { display: none !important; } }
+
+.price-history { max-width: 1120px; overflow: visible; }
+.history-filters { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px 18px; align-items: end; padding: 18px 20px; }
+.history-filters .material-search { flex: 1 1 250px; }
+.history-filters > .field { flex: 0 1 155px; }
+.history-period { display: grid; gap: 5px; }
+.history-period > span { font-size: 13px; font-weight: 600; }
+.history-period .mode button { padding: 7px 9px; }
+.history-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-block: 1px solid var(--line);
+  background: #faf7ee;
+}
+.history-summary > div { display: grid; align-content: start; gap: 2px; padding: 12px 20px; }
+.history-summary > div + div { border-left: 1px solid var(--line); }
+.history-summary span { color: var(--muted); font-size: 12px; }
+.history-summary strong { font-size: clamp(16px, 2.5vw, 25px); font-variant-numeric: tabular-nums; }
+.history-summary small { font-size: 12px; }
+.history-graph { padding: 12px 14px 5px; }
+.history-graph canvas { display: block; width: 100%; height: clamp(190px, 30vw, 285px); cursor: crosshair; }
+.history-scrubber { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 4px 6px 0 4px; }
+.history-scrubber input[type="range"] { flex: 1 1 160px; padding: 0; accent-color: var(--accent); border: 0; background: transparent; }
+.history-scrubber output { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 10px; min-width: 162px; font-size: 13px; }
+.history-interpretation { margin: 10px 20px 0; padding: 11px 13px; background: #edeedf; border-radius: 7px; }
+.history-interpretation p, .history-interpretation button { display: block; margin-top: 3px; }
+.history-source { margin: 10px 20px; font-size: 12px; }
+.history-values { padding: 10px 20px 14px; border-top: 1px solid var(--line); }
+.history-values summary { cursor: pointer; font-weight: 650; }
+.history-values table { margin-top: 8px; min-width: 240px; }
+.position-price-history { margin-top: 8px; }
+.material-search { position: relative; min-width: 0; }
+.material-results, .material-empty {
+  position: absolute;
+  z-index: 2;
+  inset: calc(100% + 4px) 0 auto;
+  max-height: 220px;
+  overflow: auto;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  box-shadow: 0 8px 22px #33281118;
+}
+.material-empty { padding: 9px; }
+.material-results button { border: 0; border-radius: 4px; display: flex; justify-content: space-between; text-align: left; gap: 8px; width: 100%; }
+.material-results button small { flex-shrink: 0; }
+.history-selection { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 12px; padding: 0 20px 12px; }
+.history-chip { display: flex; align-items: center; gap: 6px; padding: 4px 9px; background: #f4ece1; border-radius: 5px; font-weight: 650; }
+.history-chip i { display: inline-block; width: 16px; border-top: 2px solid #a64122; }
+.history-chip-compare i { border-top: 2px dashed #2c6855; }
+.history-chip button { min-width: 22px; min-height: 22px; padding: 0; }
+.history-compare-search { max-width: 480px; padding: 2px 20px 13px; }
+.supplier-tools { display: flex; flex-wrap: wrap; gap: 9px; align-items: end; }
+dialog.supplier-dialog { width: min(560px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); }
+.supplier-dialog p { margin: 4px 0 8px; }
+.supplier-quote { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 10px 12px; background: #f1f0e7; border-radius: 7px; }
+.supplier-quote div { display: grid; align-content: start; gap: 3px; }
+.supplier-quote span { font-size: 12px; color: var(--muted); }
+.supplier-section { padding: 11px 0; }
+.supplier-section + .supplier-section { border-top: 1px solid var(--line); }
+.supplier-section ul { list-style: none; padding: 0; margin: 5px 0 0; }
+.supplier-section li { display: grid; padding: 6px 8px; background: #f8f6ef; border-radius: 5px; margin-top: 4px; }
+.supplier-section li span { font-size: 13px; }
+@media (max-width: 520px) {
+  .history-filters { padding: 12px; }
+  .history-summary > div { padding: 9px; }
+  .history-summary span, .history-summary small { font-size: 11px; }
+  .history-source, .history-interpretation { margin-inline: 12px; }
+  .history-selection, .history-compare-search { padding-inline: 12px; }
+}

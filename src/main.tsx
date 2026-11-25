@@ -6,15 +6,23 @@ import { Directories, missingResource, PrintHeading, ProductOptions, Suppliers, 
 import { Finder } from './finder'
 import { EstimateAssistant } from './assistant'
 import { Matching } from './matching'
+import { PriceHistory } from './market-ui'
 import { Brand, Landing, Pricing } from './site'
 import './style.css'
 
 const storageKey = 'foundation-estimates-v2'
-type Route = { page: 'home' | 'pricing' | 'finder' | 'estimates' | 'estimate' | 'new' | 'directories' | 'integrations' | 'settings'; id?: string; query?: string }
+type Route = { page: 'home' | 'pricing' | 'finder' | 'estimates' | 'estimate' | 'new' | 'directories' | 'prices' | 'integrations' | 'settings'; id?: string; query?: string; material?: string; city?: City; row?: string }
 function readRoute(): Route {
   const [path, query = ''] = location.hash.slice(1).split('?')
   const [page, id] = path.split('/').filter(Boolean)
-  if (page === 'estimate' && id) return { page, id, query: new URLSearchParams(query).get('step') ?? undefined }
+  if (page === 'estimate' && id) {
+    const params = new URLSearchParams(query)
+    return { page, id, query: params.get('step') ?? undefined, material: params.get('material') ?? undefined, row: params.get('row') ?? undefined }
+  }
+  if (page === 'prices') {
+    const params = new URLSearchParams(query)
+    return { page, id: params.get('estimate') ?? undefined, material: params.get('material') ?? undefined, city: cities.find((city) => city === params.get('city')), row: params.get('row') ?? undefined }
+  }
   if (page === 'finder') {
     const params = new URLSearchParams(query)
     return { page, id: params.get('estimate') ?? undefined, query: params.get('q') ?? undefined }
@@ -174,9 +182,9 @@ function CalculationTable({ lines, preview, selectedKey, onSelect }: { lines: Li
   )
 }
 
-function EditLine({ line, selectedRate, mode, onClose, onEdit, onConfirm, onAcceptPrice }: {
+function EditLine({ line, selectedRate, mode, onClose, onEdit, onConfirm, onAcceptPrice, onHistory }: {
   line: Line; selectedRate: number | null; mode: Estimate['mode']; onClose: () => void
-  onEdit: (key: string, value: string) => void; onConfirm: (rate: number) => void; onAcceptPrice: () => void
+  onEdit: (key: string, value: string) => void; onConfirm: (rate: number) => void; onAcceptPrice: () => void; onHistory?: () => void
 }) {
   const [rate, setRate] = useState(selectedRate ?? 450)
   return (
@@ -185,6 +193,7 @@ function EditLine({ line, selectedRate, mode, onClose, onEdit, onConfirm, onAcce
         <h3>{line.name}</h3><button className="icon-button" type="button" onClick={onClose} aria-label="Закрыть детали">×</button>
       </div>
       <p className="muted">{number(line.quantity)} {line.unit}</p>
+      {onHistory && <button type="button" className="text-button position-price-history" onClick={onHistory}>История цен ↗</button>}
       <dl><dt>Источник</dt><dd>{line.basis}</dd>
         {mode === 'Нормативная' && <><dt>Норматив</dt><dd>{line.basis.startsWith('Учебный') ? 'Учебная позиция · условная расценка' : 'Назначается сметчиком'}</dd><dt>Обоснование</dt><dd>{line.basis.startsWith('Учебный') ? (line.basis.startsWith('Учебный справочник · ') ? 'Соответствие выбрано сметчиком на шаге подбора.' : 'Совпали наименование и единица измерения.') : 'Расценка вводится вручную.'}</dd></>}
         {line.issue === 'Цена устарела' && <><dt>Последняя известная цена</dt><dd>{money((price(line.value) ?? 0))} · 10.11.2026</dd><dt>Срок действия</dt><dd>17.11.2026</dd></>}
@@ -275,11 +284,12 @@ function ToolbarButton({ label, onClick }: { label: keyof typeof toolbarIcons; o
   </button>
 }
 
-function Workspace({ estimate, onChange, onClose, onFind, show, notice, initialStage }: {
+function Workspace({ estimate, onChange, onClose, onFind, onHistory, show, notice, initialStage, initialMaterial, initialRow }: {
   estimate: Estimate; onChange: (patch: Partial<Estimate>) => void; onClose: () => void; onFind: () => void; show: ShowFeature; notice?: string; initialStage?: Stage
+  onHistory: (material: string, city: City, row?: string) => void; initialMaterial?: string; initialRow?: string
 }) {
   const [stage, setStage] = useState<Stage>(initialStage ?? 'Спецификация')
-  const [row, setRow] = useState<string | null>(null)
+  const [row, setRow] = useState<string | null>(initialRow ?? null)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState(false)
   const [titleDraft, setTitleDraft] = useState<string | null>(null)
@@ -448,6 +458,7 @@ function Workspace({ estimate, onChange, onClose, onFind, show, notice, initialS
             </section>
             {selected && !preview && (
               <EditLine key={selected.key} line={selected} mode={estimate.mode} selectedRate={estimate.excavation[selected.key] ?? null} onClose={() => setRow(null)} onEdit={editLine}
+                onHistory={estimate.positions[Number(selected.key)] ? () => onHistory(matchedEntry(estimate, Number(selected.key))?.name ?? selected.name, estimate.city, selected.key) : undefined}
                 onAcceptPrice={() => editLine(selected.key, selected.value, 'Поставщик 01')}
                 onConfirm={(rate) => onChange(confirmExcavation(estimate, selected.key, rate))} />
             )}
@@ -472,7 +483,7 @@ function Workspace({ estimate, onChange, onClose, onFind, show, notice, initialS
       {stage === 'Поставщики' && (
         <>
           <div className="calculation-toolbar between"><p className="muted">Выбранная цена сразу учитывается в коммерческой смете.</p>{citySelect}</div>
-          <Suppliers estimate={estimate} lines={commercialLines} onChoose={editLine} />
+          <Suppliers estimate={estimate} lines={commercialLines} onChoose={editLine} onHistory={onHistory} initialMaterial={initialMaterial} />
         </>
       )}
 
@@ -509,7 +520,7 @@ function App() {
   const [feature, setFeature] = useState<{ title: string; message: string } | null>(null)
   const [notice, setNotice] = useState<{ id: string; text: string } | null>(null)
   const estimate = estimates.find((item) => item.id === route.id)
-  const inside = ['estimates', 'estimate', 'new', 'directories', 'integrations', 'settings'].includes(route.page)
+  const inside = ['estimates', 'estimate', 'new', 'directories', 'prices', 'integrations', 'settings'].includes(route.page)
   const visible = estimates.filter((item) => (item.title + ' ' + item.city + ' ' + item.source).toLowerCase().includes(query.trim().toLowerCase()))
 
   useEffect(() => {
@@ -546,6 +557,12 @@ function App() {
     go('#/estimate/' + id + (showMatching ? '?step=match' : ''))
   }
 
+  function openPriceHistory(material: string, city: City, id: string, row?: string) {
+    const params = new URLSearchParams({ material, city, estimate: id })
+    if (row !== undefined) params.set('row', row)
+    go('#/prices?' + params)
+  }
+
   function openExample(project: ProjectExample, showMatching = false) {
     const example = estimates.find((item) => item.id === project.id)
     if (example) open(example.id, showMatching)
@@ -575,7 +592,7 @@ function App() {
   }
 
   const spaces = [
-    ['Сметы', 'estimates'], ['Справочники', 'directories'], ['Интеграции', 'integrations'], ['Настройки', 'settings'],
+    ['Сметы', 'estimates'], ['Справочники', 'directories'], ['История цен', 'prices'], ['Интеграции', 'integrations'], ['Настройки', 'settings'],
   ] as const
 
   return (
@@ -600,10 +617,16 @@ function App() {
         {route.page === 'pricing' && <Pricing openWorkspace={() => go('#/estimates')} show={show} />}
         {route.page === 'finder' && <Finder key={route.id + ':' + route.query} initialQuery={route.query ?? ''} estimates={estimates} target={estimate} onAdd={addPosition} onBack={() => estimate ? open(estimate.id) : go('#/estimates')} />}
         {route.page === 'directories' && <Directories show={show} />}
+        {route.page === 'prices' && <PriceHistory key={route.material + ':' + route.city} initialMaterial={route.material} initialCity={route.city} backLabel={route.row !== undefined ? '← К позиции сметы' : undefined} onBack={estimate ? () => {
+          const params = new URLSearchParams({ step: route.row === undefined ? 'suppliers' : 'calculation', material: route.material ?? '' })
+          if (route.row !== undefined) params.set('row', route.row)
+          go('#/estimate/' + estimate.id + '?' + params)
+        } : undefined} />}
         {(route.page === 'integrations' || route.page === 'settings') && <ProductOptions section={route.page === 'integrations' ? 'Интеграции' : 'Настройки'} show={show} />}
         {route.page === 'new' && <CreateEstimate key={route.query} fromBlank={route.query === 'manual'} onCancel={() => go('#/estimates')} onCreate={(item) => { save([item, ...estimates]); open(item.id) }} />}
         {route.page === 'estimate' && estimate && (
-          <Workspace key={estimate.id + ':' + route.query} estimate={estimate} show={show} initialStage={route.query === 'match' ? 'Подбор расценок' : undefined} notice={notice?.id === estimate.id ? notice.text : undefined}
+          <Workspace key={estimate.id + ':' + route.query + ':' + route.material + ':' + route.row} estimate={estimate} show={show} initialStage={route.query === 'match' ? 'Подбор расценок' : route.query === 'suppliers' ? 'Поставщики' : route.query === 'calculation' ? 'Расчёт и проверка' : undefined} initialMaterial={route.material} initialRow={route.row} notice={notice?.id === estimate.id ? notice.text : undefined}
+            onHistory={(material, city, row) => openPriceHistory(material, city, estimate.id, row)}
             onFind={() => { setNotice(null); find('', estimate.id) }} onClose={() => { setNotice(null); go('#/estimates') }}
             onChange={(patch) => save(estimates.map((item) => item.id === estimate.id ? { ...item, ...patch, updated: new Date().toISOString() } : item))} />
         )}

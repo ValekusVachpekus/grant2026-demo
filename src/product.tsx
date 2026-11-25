@@ -1,14 +1,19 @@
 import { useState } from 'react'
 import { catalog, offers } from './catalog'
 import { cities, matchedEntry, money, number, type City, type Estimate, type Line } from './estimate'
+import { historyMaterials } from './market'
+import { SupplierCard } from './market-ui'
 
 export type ShowFeature = (name: string, description: string) => void
 
-export function Suppliers({ estimate, lines, onChoose }: {
+export function Suppliers({ estimate, lines, onChoose, onHistory, initialMaterial }: {
   estimate: Estimate; lines: Line[]; onChoose: (key: string, value: string, supplier?: string) => void
+  onHistory: (material: string, city: City) => void
+  initialMaterial?: string
 }) {
   const materials = lines.filter((line) => matchedEntry(estimate, Number(line.key))?.kind === 'Материалы')
-  const [key, setKey] = useState(materials[0]?.key ?? '')
+  const [key, setKey] = useState(() => materials.find((line) => matchedEntry(estimate, Number(line.key))?.name === initialMaterial)?.key ?? materials[0]?.key ?? '')
+  const [profile, setProfile] = useState<ReturnType<typeof offers>[number] | null>(null)
   const selected = materials.find((line) => line.key === key) ?? materials[0]
   const item = selected && matchedEntry(estimate, Number(selected.key))
   const prices = item ? offers(item, estimate.city) : []
@@ -16,19 +21,23 @@ export function Suppliers({ estimate, lines, onChoose }: {
     <section className="panel">
       <div className="panel-heading between">
         <div><h2>Сравнение поставщиков</h2><p>Предложения поставщиков · {estimate.city}</p></div>
-        {selected && <label className="field compact">Материал<select value={selected.key} onChange={(event) => setKey(event.target.value)}>{materials.map((line) => <option key={line.key} value={line.key}>{line.name}</option>)}</select></label>}
+        <div className="supplier-tools">
+          {selected && <label className="field compact">Материал<select value={selected.key} onChange={(event) => setKey(event.target.value)}>{materials.map((line) => <option key={line.key} value={line.key}>{line.name}</option>)}</select></label>}
+          {item && historyMaterials.some((material) => material.name === item.name) && <button type="button" onClick={() => onHistory(item.name, estimate.city)}>История цен ↗</button>}
+        </div>
       </div>
       {selected && prices.length ? (
         <div className="table-scroll"><table>
           <thead><tr><th>Поставщик</th><th className="number">Цена за {selected.unit}</th><th>Дата прайса</th><th>Действует до</th><th>Действие</th></tr></thead>
           <tbody>{prices.map((offer) => (
-            <tr key={offer.name}><th scope="row">{offer.name}</th><td className="number">{money(offer.price * 100)}</td><td>{offer.date}</td><td>{offer.expires}{offer.stale && <span className="badge warning">Устарела</span>}</td>
+            <tr key={offer.name}><th scope="row"><button type="button" className="text-button" onClick={() => setProfile(offer)}>{offer.name} ↗</button><small className="list-source">Карточка и отзывы</small></th><td className="number">{money(offer.price * 100)}</td><td>{offer.date}</td><td>{offer.expires}{offer.stale && <span className="badge warning">Устарела</span>}</td>
               <td>{estimate.suppliers?.[estimate.city]?.[selected.key] === offer.name ? <span>Выбрано</span> : (
                 <button type="button" onClick={() => onChoose(selected.key, String(offer.price), offer.name)}>{offer.stale ? 'Подтвердить эту цену' : 'Выбрать цену'}</button>
               )}</td></tr>
           ))}</tbody>
         </table></div>
       ) : <p className="empty">{selected ? 'В региональном прайсе нет предложений. Цену можно добавить в расчёте вручную.' : 'В спецификации нет материалов из справочника.'}</p>}
+      {profile && item && <SupplierCard offer={profile} material={item} city={estimate.city} onClose={() => setProfile(null)} />}
     </section>
   )
 }
