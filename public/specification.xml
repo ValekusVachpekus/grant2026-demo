@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<specification>
+  <position name="Геодезическая разбивка осей" unit="компл." quantity="1"/>
+  <position name="Снятие растительного слоя" unit="м³" quantity="14.5"/>
+  <position name="Земляные работы" unit="м³" quantity="32"/>
+  <position name="Обратная засыпка пазух" unit="м³" quantity="18"/>
+  <position name="Уплотнение основания" unit="м²" quantity="64"/>
+  <position name="Геотекстиль 250 г/м²" unit="м²" quantity="86"/>
+  <position name="Песок строительный" unit="м³" quantity="10.5"/>
+  <position name="Щебень 20–40 мм" unit="м³" quantity="7.2"/>
+  <position name="Устройство бетонной подготовки" unit="м²" quantity="64"/>
+  <position name="Бетон В7,5" unit="м³" quantity="3.2"/>
+  <position name="Монтаж и демонтаж опалубки" unit="м²" quantity="42"/>
+  <position name="Бетон В25" unit="м³" quantity="12"/>
+  <position name="Бетонирование фундамента" unit="м³" quantity="12"/>
+  <position name="Арматура А500С" unit="т" quantity="0.8"/>
+  <position name="Проволока вязальная" unit="кг" quantity="12"/>
+  <position name="Фиксатор защитного слоя" unit="шт." quantity="120"/>
+  <position name="Сборка арматурного каркаса" unit="т" quantity="0.8"/>
+  <position name="Мастика битумная" unit="кг" quantity="52"/>
+  <position name="Мембрана гидроизоляционная" unit="м²" quantity="68"/>
+  <position name="Гидроизоляция фундамента" unit="м²" quantity="52"/>
+  <position name="Труба дренажная Ø110" unit="м" quantity="38"/>
+  <position name="Укладка дренажной трубы" unit="м" quantity="38"/>
+</specification>
